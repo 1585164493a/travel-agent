@@ -1,16 +1,47 @@
-# 这是一个示例 Python 脚本。
+"""travel-agent 入口：python main.py <命令> [参数]"""
 
-# 按 Shift+F10 执行或将其替换为您的代码。
-# 按 双击 Shift 在所有地方搜索类、文件、工具窗口、操作和设置。
+from __future__ import annotations
 
-
-def print_hi(name):
-    # 在下面的代码行中使用断点来调试脚本。
-    print(f'Hi, {name}')  # 按 Ctrl+F8 切换断点。
+import argparse
+import sys
 
 
-# 按装订区域中的绿色按钮以运行脚本。
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="trval-agent",
+        description="旅游 agent：查真实房价与车票 → 本地过滤 → 按总成本排序",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
 
-# 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助
+    p = sub.add_parser("hotels", help="查酒店（RollingGo）")
+    p.add_argument("--dest", required=True, help="目的地，如 扬州")
+    p.add_argument("--check-in", required=True, help="入住日期 yyyy-MM-dd")
+    p.add_argument("--nights", type=int, default=2, help="住几晚")
+    p.add_argument("--max-price", type=float, default=0, help="每晚预算上限（0=不限）")
+
+    return parser
+
+
+def cmd_hotels(args: argparse.Namespace) -> int:
+    print(f"TODO: 查 {args.dest} {args.check_in} 起 {args.nights} 晚，预算 {args.max_price or '不限'}")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):          # Windows 控制台默认 GBK，
+        try:                                          # 打印 ¥ 之类的字符会直接崩
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+    args = build_parser().parse_args(argv)
+    handlers = {"hotels": cmd_hotels}
+    handler = handlers.get(args.command)
+    if handler is None:
+        print(f"还没实现的命令：{args.command}", file=sys.stderr)
+        return 2
+    return handler(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
